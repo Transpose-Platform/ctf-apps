@@ -131,46 +131,11 @@ echo "Local access: http://localhost:5000"
 if [ "$LOCAL_IP" != "localhost" ]; then
     echo "Network access: http://$LOCAL_IP:5000"
 fi
-# Set Subtrace token if not already set
-if [ -z "$SUBTRACE_TOKEN" ]; then
-    export SUBTRACE_TOKEN=subt_ENlcnzXj0MfTLYwUDDzOBaRQt2CGbOxKOzjST2lG4cn
-fi
 
 echo ""
 echo "Press Ctrl+C to stop the application"
 echo ""
 
-# Check if subtrace is available
-if command -v subtrace &> /dev/null; then
-    echo "Starting application with Subtrace monitoring..."
-    
-    # Detect OS for appropriate subtrace command
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS - use subtrace proxy with port forwarding
-        echo "macOS detected - using subtrace proxy (5000:5100)"
-        echo "Users can still access: http://localhost:5000"
-        
-        # Start subtrace proxy in background
-        subtrace proxy 5000:5100 &
-        PROXY_PID=$!
-        sleep 2
-        
-        # Start Flask app on internal port 5100
-        export FLASK_PORT=5100
-        python3 app.py
-        
-        # Cleanup proxy on exit
-        kill $PROXY_PID 2>/dev/null
-    else
-        # Linux and others - use subtrace run (original port 5000)
-        echo "Linux detected - using subtrace run"
-        export FLASK_PORT=5000
-        subtrace run -- python3 app.py
-    fi
-else
-    echo "Subtrace not found, starting without monitoring..."
-    echo "(Run ./setup_ollama.sh to install Subtrace)"
-    # Start the Flask application normally on original port
-    export FLASK_PORT=5000
-    python3 app.py
-fi
+# Start the Flask application on port 5000
+export FLASK_PORT=5000
+python3 app.py

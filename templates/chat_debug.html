@@ -1,0 +1,146 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Chat - Send Button Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .form-group { margin: 20px 0; }
+        input, button { padding: 10px; margin: 5px; }
+        input { width: 300px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .debug { background: #f8f9fa; padding: 10px; margin: 10px 0; border: 1px solid #dee2e6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Debug Chat - Send Button Test</h1>
+        
+        <div class="debug">
+            <h3>Debug Info:</h3>
+            <div id="debugInfo">Loading...</div>
+        </div>
+        
+        <form id="testForm">
+            <div class="form-group">
+                <input type="text" id="messageInput" placeholder="Type a test message..." required>
+                <button type="submit" id="sendButton">Send</button>
+            </div>
+        </form>
+        
+        <div class="debug">
+            <h3>Event Log:</h3>
+            <div id="eventLog"></div>
+        </div>
+        
+        <div class="debug">
+            <h3>Response:</h3>
+            <div id="response"></div>
+        </div>
+    </div>
+
+    <script>
+        console.log('Debug script starting...');
+        
+        function log(message) {
+            console.log(message);
+            const eventLog = document.getElementById('eventLog');
+            eventLog.innerHTML += '<div>' + new Date().toLocaleTimeString() + ': ' + message + '</div>';
+        }
+        
+        function updateDebugInfo() {
+            const debugInfo = document.getElementById('debugInfo');
+            debugInfo.innerHTML = `
+                <strong>Page loaded:</strong> ${new Date().toLocaleTimeString()}<br>
+                <strong>Form element:</strong> ${document.getElementById('testForm') ? 'Found' : 'NOT FOUND'}<br>
+                <strong>Input element:</strong> ${document.getElementById('messageInput') ? 'Found' : 'NOT FOUND'}<br>
+                <strong>Button element:</strong> ${document.getElementById('sendButton') ? 'Found' : 'NOT FOUND'}<br>
+                <strong>Current URL:</strong> ${window.location.href}
+            `;
+        }
+        
+        async function testSend() {
+            log('testSend() called');
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (!message) {
+                log('Empty message - validation failed');
+                return;
+            }
+            
+            log('Sending message: ' + message);
+            messageInput.value = '';
+            
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                log('Response status: ' + response.status);
+                const data = await response.json();
+                
+                document.getElementById('response').innerHTML = 
+                    '<strong>Status:</strong> ' + response.status + '<br>' +
+                    '<strong>Response:</strong> ' + JSON.stringify(data, null, 2);
+                
+                log('Response received successfully');
+            } catch (error) {
+                log('Error: ' + error.message);
+                document.getElementById('response').innerHTML = '<strong>Error:</strong> ' + error.message;
+            }
+        }
+        
+        // Wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            log('DOMContentLoaded event fired');
+            updateDebugInfo();
+            
+            const form = document.getElementById('testForm');
+            const button = document.getElementById('sendButton');
+            const input = document.getElementById('messageInput');
+            
+            if (form) {
+                log('Adding form submit listener');
+                form.addEventListener('submit', function(e) {
+                    log('Form submit event fired');
+                    e.preventDefault();
+                    testSend();
+                });
+            } else {
+                log('ERROR: Form not found!');
+            }
+            
+            if (button) {
+                log('Adding button click listener');
+                button.addEventListener('click', function(e) {
+                    log('Button click event fired');
+                });
+            } else {
+                log('ERROR: Button not found!');
+            }
+            
+            if (input) {
+                log('Adding input keypress listener');
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        log('Enter key pressed in input');
+                    }
+                });
+            } else {
+                log('ERROR: Input not found!');
+            }
+            
+            log('All event listeners added');
+        });
+        
+        log('Script loaded completely');
+    </script>
+</body>
+</html>

@@ -40,45 +40,9 @@ echo "Quick test:"
 echo 'curl -X POST -H "Content-Type: application/json" \'
 echo '  -d '"'"'{"message": "Hello!"}'"'"' http://localhost:5001/chat'
 echo ""
-# Set Subtrace token if not already set
-if [ -z "$SUBTRACE_TOKEN" ]; then
-    export SUBTRACE_TOKEN=subt_ENlcnzXj0MfTLYwUDDzOBaRQt2CGbOxKOzjST2lG4cn
-fi
-
 echo "Press Ctrl+C to stop the server"
 echo "=========================="
 
-# Check if subtrace is available
-if command -v subtrace &> /dev/null; then
-    echo "Starting API with Subtrace monitoring..."
-    
-    # Detect OS for appropriate subtrace command
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        # macOS - use subtrace proxy with port forwarding
-        echo "macOS detected - using subtrace proxy (5001:5101)"
-        echo "Users can still access: http://localhost:5001"
-        
-        # Start subtrace proxy in background
-        subtrace proxy 5001:5101 &
-        PROXY_PID=$!
-        sleep 2
-        
-        # Start Flask API on internal port 5101
-        export FLASK_PORT=5101
-        python api_app.py
-        
-        # Cleanup proxy on exit
-        kill $PROXY_PID 2>/dev/null
-    else
-        # Linux and others - use subtrace run (original port 5001)
-        echo "Linux detected - using subtrace run"
-        export FLASK_PORT=5001
-        subtrace run -- python api_app.py
-    fi
-else
-    echo "Subtrace not found, starting without monitoring..."
-    echo "(Run ./setup_ollama.sh to install Subtrace)"
-    # Start the API server normally on original port
-    export FLASK_PORT=5001
-    python api_app.py
-fi
+# Start the API server on port 5001
+export FLASK_PORT=5001
+python api_app.py
