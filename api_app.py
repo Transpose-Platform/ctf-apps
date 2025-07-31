@@ -142,13 +142,12 @@ def create_session():
     """Create a new chat session"""
     try:
         chat_session = ChatSession()
-        chat_sessions[chat_session.session_id] = chat_session
+        session_info = chat_session.get_session_info()
         
         return jsonify({
             'session_id': chat_session.session_id,
-            'created_at': chat_session.created_at
+            'created_at': session_info['created_at'].isoformat() if session_info else datetime.now().isoformat()
         }), 201
-        
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -156,17 +155,21 @@ def create_session():
 def get_session(session_id):
     """Get session details"""
     try:
-        if session_id not in chat_sessions:
+        chat_session = ChatSession(session_id)
+        session_info = chat_session.get_session_info()
+        
+        if not session_info:
             return jsonify({'error': 'Session not found'}), 404
         
-        chat_session = chat_sessions[session_id]
-        return jsonify({
-            'session_id': chat_session.session_id,
-            'created_at': chat_session.created_at,
-            'message_count': len(chat_session.messages),
-            'messages': chat_session.messages
-        })
+        messages = chat_session.get_messages()
         
+        return jsonify({
+            'session_id': session_info['session_id'],
+            'created_at': session_info['created_at'].isoformat(),
+            'updated_at': session_info['updated_at'].isoformat(),
+            'message_count': session_info['message_count'],
+            'messages': messages
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -174,16 +177,16 @@ def get_session(session_id):
 def list_sessions():
     """List all sessions"""
     try:
-        sessions = []
-        for session_id, session in chat_sessions.items():
-            sessions.append({
-                'session_id': session_id,
-                'created_at': session.created_at,
-                'message_count': len(session.messages)
-            })
+        # For anonymous sessions, we don't expose session listing
+        # This endpoint exists for API completeness but returns minimal info
+        session_count = chat_db.get_session_count()
+        message_count = chat_db.get_message_count()
         
-        return jsonify(sessions)
-        
+        return jsonify({
+            'total_sessions': session_count,
+            'total_messages': message_count,
+            'note': 'Individual session details not available for anonymous sessions'
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -248,19 +251,25 @@ def health_check():
         ollama_status = health_response.status_code == 200
         current_model = detect_available_model() if ollama_status else "unknown"
         
+        # Check database connection
+        db_status = chat_db.test_connection()
+        
         return jsonify({
-            'status': 'healthy' if ollama_status else 'unhealthy',
+            'status': 'healthy' if (ollama_status and db_status) else 'unhealthy',
             'ollama_connected': ollama_status,
+            'database_connected': db_status,
             'model': current_model,
-            'sessions_count': len(chat_sessions),
+            'sessions_count': chat_db.get_session_count() if db_status else 0,
+            'messages_count': chat_db.get_message_count() if db_status else 0,
             'timestamp': datetime.now().isoformat()
         })
-    except:
+    except Exception as e:
         return jsonify({
             'status': 'unhealthy',
             'ollama_connected': False,
+            'database_connected': False,
             'model': 'unknown',
-            'sessions_count': len(chat_sessions),
+            'error': str(e),
             'timestamp': datetime.now().isoformat()
         })
 
