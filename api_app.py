@@ -285,9 +285,12 @@ if __name__ == '__main__':
     # Auto-detect the best available model
     available_model = detect_available_model()
     
+    # Get port from environment variable (for Subtrace proxy support)
+    port = int(os.environ.get('FLASK_PORT', 5001))
+    
     print(f"Starting Simple Chat API...")
     print(f"Model: {available_model}")
     print(f"Ollama URL: {OLLAMA_BASE_URL}")
-    print(f"API available at: http://localhost:5001")
+    print(f"API available at: http://localhost:{port}")
     
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)

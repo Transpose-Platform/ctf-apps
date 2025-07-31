@@ -232,10 +232,14 @@ if __name__ == '__main__':
     # Auto-detect the best available model
     available_model = detect_available_model()
     
+    # Get port from environment variable (for Subtrace proxy support)
+    port = int(os.environ.get('FLASK_PORT', 5000))
+    
     print(f"Starting AI Chat Application...")
     print(f"Platform: {os.name}")
     print(f"Model: {available_model}")
     print(f"Ollama URL: {OLLAMA_BASE_URL}")
     print(f"Config loaded: System prompt length = {len(config['system_prompt'])} chars")
+    print(f"Running on port: {port}")
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=True)

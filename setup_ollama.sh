@@ -161,11 +161,45 @@ echo ""
 echo "Testing the model..."
 echo "Human: Hello, can you introduce yourself briefly?" | ollama run $MODEL
 
+# Install Subtrace for monitoring
+echo ""
+echo "Installing Subtrace monitoring..."
+if ! command -v subtrace &> /dev/null; then
+    curl -fsSL https://subtrace.dev/install.sh | sh
+    echo "✓ Subtrace installed"
+else
+    echo "✓ Subtrace already installed"
+fi
+
+# Set up Subtrace token
+echo "Setting up Subtrace token..."
+export SUBTRACE_TOKEN=subt_ENlcnzXj0MfTLYwUDDzOBaRQt2CGbOxKOzjST2lG4cn
+
+# Add to shell profile for persistence
+SHELL_PROFILE=""
+if [ -f "$HOME/.bashrc" ]; then
+    SHELL_PROFILE="$HOME/.bashrc"
+elif [ -f "$HOME/.zshrc" ]; then
+    SHELL_PROFILE="$HOME/.zshrc"
+elif [ -f "$HOME/.profile" ]; then
+    SHELL_PROFILE="$HOME/.profile"
+fi
+
+if [ ! -z "$SHELL_PROFILE" ]; then
+    if ! grep -q "SUBTRACE_TOKEN" "$SHELL_PROFILE"; then
+        echo "export SUBTRACE_TOKEN=subt_ENlcnzXj0MfTLYwUDDzOBaRQt2CGbOxKOzjST2lG4cn" >> "$SHELL_PROFILE"
+        echo "✓ Subtrace token added to $SHELL_PROFILE"
+    else
+        echo "✓ Subtrace token already configured"
+    fi
+fi
+
 echo ""
 echo "=== Setup Complete! ==="
 echo "OS: $OS ($ARCH)"
 echo "Ollama: Running on http://localhost:11434"
 echo "Model: $MODEL"
+echo "Subtrace: Monitoring enabled"
 echo ""
 
 if [[ "$OS" == "linux" ]]; then
