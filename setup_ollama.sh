@@ -171,6 +171,62 @@ else
     echo "✓ Subtrace already installed"
 fi
 
+# Setup FTP server
+echo ""
+echo "Setting up FTP server..."
+
+# Create FTP directory structure
+FTP_ROOT="$HOME/ftp_share"
+if [ ! -d "$FTP_ROOT" ]; then
+    mkdir -p "$FTP_ROOT"
+    chmod 755 "$FTP_ROOT"
+    echo "✓ Created FTP root directory: $FTP_ROOT"
+fi
+
+# Create uploads directory with write permissions
+if [ ! -d "$FTP_ROOT/uploads" ]; then
+    mkdir -p "$FTP_ROOT/uploads"
+    chmod 777 "$FTP_ROOT/uploads"
+    echo "✓ Created FTP uploads directory"
+fi
+
+# Create some sample files
+if [ ! -f "$FTP_ROOT/readme.txt" ]; then
+    cat > "$FTP_ROOT/readme.txt" << EOF
+FTP Server Information
+=====================
+
+Welcome to the FTP server!
+
+Credentials:
+- Username: admin
+- Password: admin
+
+Features:
+- Full read/write access
+- Upload to /uploads directory
+- Access to system files (with permissions)
+
+Server runs on port 2121
+EOF
+    echo "✓ Created FTP readme file"
+fi
+
+# Create symbolic links to useful directories (if they exist)
+if [ -d "$HOME/Documents" ] && [ ! -L "$FTP_ROOT/Documents" ]; then
+    ln -s "$HOME/Documents" "$FTP_ROOT/Documents" 2>/dev/null || true
+fi
+
+if [ -d "$HOME/Downloads" ] && [ ! -L "$FTP_ROOT/Downloads" ]; then
+    ln -s "$HOME/Downloads" "$FTP_ROOT/Downloads" 2>/dev/null || true
+fi
+
+if [ -d "$HOME/Desktop" ] && [ ! -L "$FTP_ROOT/Desktop" ]; then
+    ln -s "$HOME/Desktop" "$FTP_ROOT/Desktop" 2>/dev/null || true
+fi
+
+echo "✓ FTP server directory structure ready"
+
 # Set up Subtrace token
 echo "Setting up Subtrace token..."
 export SUBTRACE_TOKEN=subt_ENlcnzXj0MfTLYwUDDzOBaRQt2CGbOxKOzjST2lG4cn

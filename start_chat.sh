@@ -124,6 +124,25 @@ else
     LOCAL_IP="localhost"
 fi
 
+# Start FTP server in background
+echo "Starting FTP server..."
+python3 ftp_server.py --background &
+FTP_PID=$!
+sleep 3
+
+# Check if FTP server started successfully
+if ps -p $FTP_PID > /dev/null; then
+    echo "✓ PERMISSIVE FTP server started successfully on port 2121"
+    echo "  ⚠️  FULL FILESYSTEM ACCESS ENABLED ⚠️"
+    echo "  Username: admin / Password: admin (full read/write)"
+    echo "  Anonymous access also available (read-only)"
+    if [ "$LOCAL_IP" != "localhost" ]; then
+        echo "  Network FTP access: ftp://$LOCAL_IP:2121"
+    fi
+else
+    echo "⚠ FTP server may not have started properly"
+fi
+
 echo ""
 echo "=== Starting Flask Application ==="
 echo "Model: $MODEL"
@@ -133,9 +152,33 @@ if [ "$LOCAL_IP" != "localhost" ]; then
 fi
 
 echo ""
-echo "Press Ctrl+C to stop the application"
+echo "Services running:"
+echo "  - Chat Application: http://localhost:5000"
+echo "  - FTP Server: ftp://localhost:2121 (admin/admin)"
 echo ""
+echo "Press Ctrl+C to stop all services"
+echo ""
+
+# Function to cleanup on exit
+cleanup() {
+    echo ""
+    echo "Shutting down services..."
+    
+    # Kill FTP server
+    if ps -p $FTP_PID > /dev/null; then
+        kill $FTP_PID 2>/dev/null
+        echo "✓ FTP server stopped"
+    fi
+    
+    exit 0
+}
+
+# Set up signal handlers
+trap cleanup INT TERM
 
 # Start the Flask application on port 5000
 export FLASK_PORT=5000
 python3 app.py
+
+# Cleanup on normal exit
+cleanup
