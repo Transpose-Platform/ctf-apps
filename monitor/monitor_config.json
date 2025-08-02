@@ -1,0 +1,22 @@
+{
+  "services": [
+    {"ip": "192.168.0.111", "port": 5000, "name": "Host A - Port 5000"},
+    {"ip": "192.168.0.111", "port": 5001, "name": "Host A - Port 5001"},
+    {"ip": "192.168.0.200", "port": 5000, "name": "Host B - Port 5000"},
+    {"ip": "192.168.0.200", "port": 5001, "name": "Host B - Port 5001"},
+    {"ip": "192.168.0.189", "port": 5000, "name": "Host C - Port 5000"},
+    {"ip": "192.168.0.189", "port": 5001, "name": "Host C - Port 5001"},
+    {"ip": "192.168.0.50", "port": 5000, "name": "Host D - Port 5000"},
+    {"ip": "192.168.0.50", "port": 5001, "name": "Host D - Port 5001"},
+    {"ip": "192.168.0.81", "port": 5000, "name": "Host E - Port 5000"},
+    {"ip": "192.168.0.81", "port": 5001, "name": "Host E - Port 5001"},
+    {"ip": "192.168.0.117", "port": 5000, "name": "Host F - Port 5000"},
+    {"ip": "192.168.0.117", "port": 5001, "name": "Host F - Port 5001"},
+    {"ip": "192.168.0.24", "port": 5000, "name": "Host G - Port 5000"},
+    {"ip": "192.168.0.24", "port": 5001, "name": "Host G - Port 5001"},
+    {"ip": "192.168.0.216", "port": 5000, "name": "Host H - Port 5000"},
+    {"ip": "192.168.0.216", "port": 5001, "name": "Host H - Port 5001"}
+  ],
+  "check_interval": 1,
+  "timeout": 5
+}
