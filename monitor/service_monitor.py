@@ -13,6 +13,8 @@ from datetime import datetime
 from typing import List, Dict, Tuple
 import threading
 import signal
+import urllib.request
+import urllib.error
 
 class ServiceMonitor:
     def __init__(self, config_file="monitor_config.json", results_file="monitor_results.json"):
@@ -93,31 +95,106 @@ class ServiceMonitor:
             print(f"Error loading previous state: {e}")
             self.success_counts = {}
     
-    def check_service(self, ip: str, port: int, timeout: int = 5) -> Tuple[bool, float, str]:
-        """Check if a service is alive by attempting to connect to it"""
+    def check_http_service(self, ip: str, port: int, timeout: int = 5) -> Tuple[bool, float, str]:
+        """Check if HTTP service is alive by requesting the page"""
         start_time = time.time()
         
         try:
-            # Create socket and attempt connection
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(timeout)
+            url = f"http://{ip}:{port}/"
             
-            result = sock.connect_ex((ip, port))
-            sock.close()
+            # Create request with timeout
+            req = urllib.request.Request(url)
+            req.add_header('User-Agent', 'ServiceMonitor/1.0')
             
-            response_time = (time.time() - start_time) * 1000  # Convert to ms
-            
-            if result == 0:
-                return True, response_time, "Connected successfully"
-            else:
-                return False, response_time, f"Connection failed (error {result})"
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                response_time = (time.time() - start_time) * 1000
+                status_code = response.getcode()
                 
-        except socket.gaierror as e:
+                if 200 <= status_code < 400:
+                    return True, response_time, f"HTTP {status_code} - Page loaded successfully"
+                else:
+                    return False, response_time, f"HTTP {status_code} - Unexpected status code"
+                    
+        except urllib.error.HTTPError as e:
             response_time = (time.time() - start_time) * 1000
-            return False, response_time, f"DNS resolution failed: {e}"
+            return False, response_time, f"HTTP {e.code} - {e.reason}"
+        except urllib.error.URLError as e:
+            response_time = (time.time() - start_time) * 1000
+            return False, response_time, f"URL Error: {e.reason}"
         except Exception as e:
             response_time = (time.time() - start_time) * 1000
-            return False, response_time, f"Connection error: {e}"
+            return False, response_time, f"HTTP Error: {e}"
+    
+    def check_health_service(self, ip: str, port: int, timeout: int = 5) -> Tuple[bool, float, str]:
+        """Check service health via health endpoint or socket connection"""
+        start_time = time.time()
+        
+        # First try health endpoint
+        try:
+            health_url = f"http://{ip}:{port}/health"
+            req = urllib.request.Request(health_url)
+            req.add_header('User-Agent', 'ServiceMonitor/1.0')
+            
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                response_time = (time.time() - start_time) * 1000
+                status_code = response.getcode()
+                
+                if status_code == 200:
+                    return True, response_time, "Health check passed"
+                else:
+                    return False, response_time, f"Health check failed - HTTP {status_code}"
+                    
+        except:
+            # Fall back to socket connection check
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(timeout)
+                
+                result = sock.connect_ex((ip, port))
+                sock.close()
+                
+                response_time = (time.time() - start_time) * 1000
+                
+                if result == 0:
+                    return True, response_time, "Socket connection successful"
+                else:
+                    return False, response_time, f"Connection failed (error {result})"
+                    
+            except Exception as e:
+                response_time = (time.time() - start_time) * 1000
+                return False, response_time, f"Connection error: {e}"
+    
+    def check_service(self, service: Dict, timeout: int = 5) -> Tuple[bool, float, str]:
+        """Check service based on port type"""
+        ip = service['ip']
+        port = service['port']
+        
+        if port == 5000:
+            # HTTP page load check
+            return self.check_http_service(ip, port, timeout)
+        elif port == 5001:
+            # Health check
+            return self.check_health_service(ip, port, timeout)
+        else:
+            # Default socket connection check
+            start_time = time.time()
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(timeout)
+                
+                result = sock.connect_ex((ip, port))
+                sock.close()
+                
+                response_time = (time.time() - start_time) * 1000
+                
+                if result == 0:
+                    return True, response_time, "Connected successfully"
+                else:
+                    return False, response_time, f"Connection failed (error {result})"
+                    
+            except Exception as e:
+                response_time = (time.time() - start_time) * 1000
+                return False, response_time, f"Connection error: {e}"
     
     def log_result(self, service: Dict, is_alive: bool, response_time: float, message: str):
         """Update success count and save to file"""
@@ -141,11 +218,7 @@ class ServiceMonitor:
     def monitor_cycle(self):
         """Perform one monitoring cycle for all services"""
         for service in self.services:
-            is_alive, response_time, message = self.check_service(
-                service['ip'], 
-                service['port']
-            )
-            
+            is_alive, response_time, message = self.check_service(service)
             self.log_result(service, is_alive, response_time, message)
     
     def start_monitoring(self):

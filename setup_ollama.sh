@@ -81,6 +81,14 @@ else
             fi
         fi
         
+        # Enable SSH on Raspberry Pi
+        if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]]; then
+            echo "Enabling SSH service for Raspberry Pi..."
+            sudo systemctl enable ssh
+            sudo systemctl start ssh
+            echo "✓ SSH enabled on port 22"
+        fi
+        
         # Install Ollama
         curl -fsSL https://ollama.com/install.sh | sh
         
